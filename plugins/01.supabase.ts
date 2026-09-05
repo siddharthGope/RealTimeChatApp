@@ -9,16 +9,6 @@ export default defineNuxtPlugin(() => {
     config.public.supabaseKey
   )
 
-  console.log(
-"URL:",
-config.public.supabaseUrl
-)
-
-console.log(
-"KEY:",
-config.public.supabaseKey
-)
-
 
   return {
     provide: {
