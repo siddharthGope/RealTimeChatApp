@@ -22,6 +22,15 @@ A small shared realtime chat room built with Nuxt, Supabase Auth/Realtime, and o
 
 Open `http://localhost:3000`, create an account, and open the chat. Check **Ask AI to reply** before sending when you want a local AI response.
 
+## Why messages stay but a second tab changes the signed-in user
+
+These are two different kinds of persistence:
+
+- **Messages** are rows in the Supabase `messages` database table. When the chat page loads, it requests those rows again, so messages remain after a page refresh and are visible to every authenticated user in the shared room.
+- **Authentication session** is stored by the Supabase browser client in `localStorage` by default. All regular tabs that use the same browser profile and the same origin (`http://localhost:3000`) share that storage. Signing in as a second email address in another tab replaces the saved session, so the first tab also becomes the second user after its auth listener updates.
+
+To test two users at the same time, sign in with one account in a normal browser window and the other account in an **Incognito/InPrivate** window, a different browser, or a separate browser profile. Those contexts have separate storage and therefore separate Supabase sessions.
+
 ## Notes
 
 - Supabase free tier handles authentication, database storage, and live message delivery.
