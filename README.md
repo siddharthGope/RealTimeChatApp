@@ -5,7 +5,7 @@ A small shared realtime chat room built with Nuxt, Supabase Auth/Realtime, and o
 ## One-time setup
 
 1. Create a free Supabase project and enable Email authentication.
-2. In Supabase Dashboard, open **SQL Editor** and run [`supabase/schema.sql`](./supabase/schema.sql).
+2. In Supabase Dashboard, open **SQL Editor** and run [`supabase/schema.sql`](./supabase/schema.sql), then [`supabase/profile-migration.sql`](./supabase/profile-migration.sql).
 3. Copy `.env.example` to `.env`, then set `SUPABASE_URL` and `SUPABASE_KEY` from Supabase's API settings. Do not commit `.env`.
 4. Install [Ollama](https://ollama.com), then run:
 
@@ -21,6 +21,8 @@ A small shared realtime chat room built with Nuxt, Supabase Auth/Realtime, and o
    ```
 
 Open `http://localhost:3000`, create an account, and open the chat. Check **Ask AI to reply** before sending when you want a local AI response.
+
+Open **Profile** from the chat header to choose a display name and upload an avatar image. Those details are saved in Supabase and appear on messages sent after the profile is saved.
 
 ## Why messages stay but a second tab changes the signed-in user
 

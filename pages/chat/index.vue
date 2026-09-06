@@ -7,6 +7,7 @@ type Message = {
   created_at: string;
   user_id: string | null;
   sender_name: string;
+  avatar_url: string | null;
   is_ai: boolean;
 };
 
@@ -18,14 +19,17 @@ const askAi = ref(false);
 const loading = ref(true);
 const aiThinking = ref(false);
 const errorMessage = ref("");
+const profile = ref<{ display_name: string; avatar_url: string | null } | null>(null);
 let channel: ReturnType<typeof $supabase.channel> | undefined;
 
 // Reads the signed-in user's ID to identify their own messages.
 const currentUserId = computed(() => authStore.user?.id);
-// Creates a display name from the signed-in user's email address.
+// Uses the saved profile name, with the email name as a fallback.
 const currentName = computed(
-  () => authStore.user?.email?.split("@")[0] || "Member",
+  () => profile.value?.display_name || authStore.user?.email?.split("@")[0] || "Member",
 );
+// Provides the current user's saved avatar for each new message.
+const currentAvatarUrl = computed(() => profile.value?.avatar_url || null);
 // Changes an ISO timestamp into a short, local time such as "10:22 AM".
 const formattedTime = (value: string) =>
   new Intl.DateTimeFormat(undefined, {
@@ -52,6 +56,18 @@ const loadMessages = async () => {
   else messages.value = (data || []) as Message[];
   loading.value = false;
   scrollToLatest();
+};
+
+// Loads the current user's display name and avatar for the chat interface.
+const loadProfile = async () => {
+  if (!currentUserId.value) return;
+  const { data, error } = await $supabase
+    .from("profiles")
+    .select("display_name, avatar_url")
+    .eq("id", currentUserId.value)
+    .maybeSingle();
+  if (error) errorMessage.value = error.message;
+  else profile.value = data;
 };
 
 // Adds a realtime message only if it is not already in the local list.
@@ -83,6 +99,7 @@ const sendMessage = async () => {
     content,
     user_id: currentUserId.value,
     sender_name: currentName.value,
+    avatar_url: currentAvatarUrl.value,
     is_ai: false,
   });
   if (error) {
@@ -132,6 +149,7 @@ const signOut = async () => {
 
 // Loads old messages and listens for new messages from other connected users.
 onMounted(async () => {
+  await loadProfile();
   await loadMessages();
   channel = $supabase
     .channel("simplechat-messages")
@@ -158,9 +176,14 @@ onBeforeUnmount(() => {
         <h1 class="font-bold">SimpleChat</h1>
         <p class="text-xs text-emerald-400">● live room</p>
       </div>
-      <button class="text-sm text-slate-400 hover:text-white" @click="signOut">
-        Sign out
-      </button>
+      <div class="flex items-center gap-4">
+        <NuxtLink to="/profile" class="text-sm text-emerald-400 hover:text-emerald-300">
+          Profile
+        </NuxtLink>
+        <button class="text-sm text-slate-400 hover:text-white" @click="signOut">
+          Sign out
+        </button>
+      </div>
     </header>
     <section class="mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 py-6">
       <p
@@ -193,7 +216,17 @@ onBeforeUnmount(() => {
                 : 'bg-slate-800 self-start'
           "
         >
-          <div class="mb-1 flex gap-2 text-xs opacity-75">
+          <div class="mb-1 flex items-center gap-2 text-xs opacity-75">
+            <img
+              v-if="message.avatar_url"
+              :src="message.avatar_url"
+              :alt="`${message.sender_name}'s avatar`"
+              class="h-5 w-5 rounded-full object-cover"
+            />
+            <span
+              v-else-if="!message.is_ai"
+              class="grid h-5 w-5 place-items-center rounded-full bg-slate-600 text-[9px] font-bold text-white"
+            >{{ message.sender_name.slice(0, 2).toUpperCase() }}</span>
             <span class="font-semibold">{{ message.sender_name }}</span
             ><time>{{ formattedTime(message.created_at) }}</time>
           </div>
