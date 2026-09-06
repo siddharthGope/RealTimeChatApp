@@ -1,55 +1,38 @@
 <script setup>
-const email = ref("");
-const password = ref("");
+const email = ref('')
+const password = ref('')
+const errorMessage = ref('')
+const submitting = ref(false)
+const { $supabase } = useNuxtApp()
+const authStore = useAuthStore()
+const router = useRouter()
 
-const { $supabase } = useNuxtApp();
-
-const authStore = useAuthStore();
-
-const router = useRouter();
-
+// Signs in with Supabase and redirects successful users to the chat room.
 const login = async () => {
-  const {
-    data,
-
-    error,
-  } = await $supabase.auth.signInWithPassword({
-    email: email.value,
-
-    password: password.value,
-  });
-
+  errorMessage.value = ''
+  submitting.value = true
+  const { data, error } = await $supabase.auth.signInWithPassword({ email: email.value, password: password.value })
   if (error) {
-    alert(error.message);
-
-    return;
+    errorMessage.value = error.message
+    submitting.value = false
+    return
   }
-
-  authStore.setSession(data.session);
-
-  router.push("/chat");
-};
+  authStore.setSession(data.session)
+  await router.push('/chat')
+  submitting.value = false
+}
 </script>
 
 <template>
-  <div class="flex justify-center items-center h-screen">
-    <form @submit.prevent="login" class="bg-white shadow p-8 rounded w-96">
-      <h1 class="text-2xl font-bold mb-5">Login</h1>
-
-      <input
-        v-model="email"
-        placeholder="Email"
-        class="border p-3 w-full mb-3"
-      />
-
-      <input
-        v-model="password"
-        type="password"
-        placeholder="Password"
-        class="border p-3 w-full mb-3"
-      />
-
-      <button class="bg-black text-white p-3 w-full rounded">Login</button>
+  <div class="grid min-h-screen place-items-center bg-slate-950 p-6">
+    <form class="w-full max-w-md rounded-2xl bg-white p-8 shadow-2xl" @submit.prevent="login">
+      <h1 class="text-2xl font-bold text-slate-900">Welcome back</h1>
+      <p class="mt-2 text-sm text-slate-600">Sign in to join the room.</p>
+      <p v-if="errorMessage" class="mt-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{{ errorMessage }}</p>
+      <input v-model="email" class="mt-6 w-full rounded-lg border p-3" type="email" placeholder="Email" required>
+      <input v-model="password" class="mt-3 w-full rounded-lg border p-3" type="password" placeholder="Password" required>
+      <button :disabled="submitting" class="mt-5 w-full rounded-lg bg-emerald-500 p-3 font-semibold text-slate-950 disabled:opacity-60">{{ submitting ? 'Signing in…' : 'Sign in' }}</button>
+      <NuxtLink to="/register" class="mt-5 block text-center text-sm text-emerald-700">Need an account? Create one</NuxtLink>
     </form>
   </div>
 </template>
